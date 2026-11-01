@@ -3,7 +3,7 @@ name: ICT Gold Signal
 on:
   schedule:
     # har 15 min, roz, 06:00-16:59 UTC (kill zones; BTC weekend par bhi, Gold weekend par bot khud skip karta hai)
-    - cron: "*/15 6-16 * * *"
+    - cron: "*/15 6-20 * * *"
   workflow_dispatch:
     inputs:
       test:
