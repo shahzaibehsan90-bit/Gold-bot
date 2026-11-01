@@ -1,0 +1,41 @@
+name: ICT Gold Signal
+
+on:
+  schedule:
+    # har 15 min, roz, 06:00-16:59 UTC (kill zones; BTC weekend par bhi, Gold weekend par bot khud skip karta hai)
+    - cron: "*/15 6-16 * * *"
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Test message bhejne ke liye 1 likho"
+        required: false
+        default: "0"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: signal
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Run bot
+        run: python bot.py
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TEST: ${{ github.event.inputs.test }}
+      - name: Save state
+        run: |
+          git config user.name "signal-bot"
+          git config user.email "signal-bot@users.noreply.github.com"
+          git add state.json || true
+          git diff --cached --quiet || (git commit -m "state" && git push)
