@@ -20,6 +20,8 @@ import pandas as pd
 
 import bot
 
+REAL_FETCH = bot.fetch      # keep the real downloader (bot.fetch gets replaced during the replay)
+
 DAYS_15M = "59d"
 EXPIRY = bot.P["expiry_bars"]
 STRATS = [x.strip().upper() for x in os.getenv("BT_STRATS", "ICT,SB,JUDAS,BREAKER").split(",") if x.strip().upper() in bot.STRATEGIES]
@@ -36,9 +38,9 @@ def num(s):
 def load(name):
     """Download history for one market (overridable in tests)."""
     tk = bot.MARKETS[name]["ticker"]
-    m15 = bot.fetch(tk, "15m", DAYS_15M, 15)
-    h1 = bot.fetch(tk, "60m", "59d", 60)
-    d1 = bot.fetch(tk, "1d", "120d", 0, drop_forming=False)
+    m15 = REAL_FETCH(tk, "15m", DAYS_15M, 15)
+    h1 = REAL_FETCH(tk, "60m", "59d", 60)
+    d1 = REAL_FETCH(tk, "1d", "120d", 0, drop_forming=False)
     return m15, h1, d1
 
 
@@ -125,6 +127,7 @@ def backtest_market(name):
             out.append(dict(t=t, side=side, res=res, loss=loss_usd, win=win_usd,
                             rr=abs(tp - e) / max(abs(e - sl), 1e-9), kz=kz, strat=code, name=name))
         result[code] = out
+    result["_bars"] = len(m15)
     return result
 
 
@@ -170,7 +173,7 @@ def main():
         for c in STRATS:
             by_strat[c] += res[c]
             parts.append(f"{c} {cell(summarize(res[c]))}")
-        rows.append(f"{name}: " + " | ".join(parts))
+        rows.append(f"{name} ({res['_bars']} bars): " + " | ".join(parts))
         print(rows[-1])
 
     head = (f"📊 BACKTEST (pichle ~59 din; spread/commission ke baghair; ek candle mein SL+TP dono to SL pehle)\n"
